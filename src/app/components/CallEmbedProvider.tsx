@@ -49,12 +49,15 @@ export function CallEmbedProvider({ children }: CallEmbedProviderProps) {
       <div
         data-call-embed-container
         style={{
-          visibility: callVisible ? undefined : 'hidden',
+          display: 'none',
+          visibility: 'hidden',
           position: 'fixed',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '50%',
+          width: 0,
+          height: 0,
+          opacity: 0,
+          pointerEvents: 'none',
         }}
         ref={callEmbedRef}
       />

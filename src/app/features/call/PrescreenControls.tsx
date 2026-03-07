@@ -1,31 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Icon, Icons, Spinner, Text } from 'folds';
+import { useAtomValue } from 'jotai';
 import { SequenceCard } from '../../components/sequence-card';
 import * as css from './styles.css';
 import { ChatButton, ControlDivider, MicrophoneButton, SoundButton, VideoButton } from './Controls';
 import { useIsDirectRoom, useRoom } from '../../hooks/useRoom';
-import { useCallEmbed, useCallJoined, useCallStart } from '../../hooks/useCallEmbed';
 import { useCallPreferences } from '../../state/hooks/callPreferences';
-import { CallControlState } from '../../plugins/call/CallControlState';
+import { useJoinCall } from '../../components/RTCProvider';
+import { activeCallRoomIdAtom } from '../../state/rtc';
 
 type PrescreenControlsProps = {
   canJoin?: boolean;
 };
 export function PrescreenControls({ canJoin }: PrescreenControlsProps) {
   const room = useRoom();
-  const callEmbed = useCallEmbed();
-  const callJoined = useCallJoined(callEmbed);
+  const activeCallRoomId = useAtomValue(activeCallRoomIdAtom);
   const direct = useIsDirectRoom();
 
-  const inOtherCall = callEmbed && callEmbed.roomId !== room.roomId;
+  const inOtherCall = activeCallRoomId && activeCallRoomId !== room.roomId;
 
-  const startCall = useCallStart(direct);
-  const joining = callEmbed?.roomId === room.roomId && !callJoined;
+  const joinCall = useJoinCall();
+  const [joining, setJoining] = useState(false);
 
   const disabled = inOtherCall || !canJoin;
 
   const { microphone, video, sound, toggleMicrophone, toggleVideo, toggleSound } =
     useCallPreferences();
+
+  const handleJoinCall = async () => {
+    setJoining(true);
+    try {
+      await joinCall(room.roomId);
+
+      // Note: The initial audio/video state will be synced through the RTCProvider
+      // based on the localMember state from the SDK. The preferences are stored
+      // in the call preferences state and will be applied when the user toggles them.
+    } catch (error) {
+      console.error('Failed to join call:', error);
+    } finally {
+      setJoining(false);
+    }
+  };
 
   return (
     <SequenceCard
@@ -50,7 +65,7 @@ export function PrescreenControls({ canJoin }: PrescreenControlsProps) {
         <Button
           variant={disabled ? 'Secondary' : 'Success'}
           fill={disabled ? 'Soft' : 'Solid'}
-          onClick={() => startCall(room, new CallControlState(microphone, video, sound))}
+          onClick={handleJoinCall}
           disabled={disabled || joining}
           before={
             joining ? (

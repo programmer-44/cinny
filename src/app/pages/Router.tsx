@@ -70,6 +70,7 @@ import { SearchModalRenderer } from '../features/search';
 import { getFallbackSession } from '../state/sessions';
 import { CallStatusRenderer } from './CallStatusRenderer';
 import { CallEmbedProvider } from '../components/CallEmbedProvider';
+import { RTCProvider } from '../components/RTCProvider';
 
 export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize) => {
   const { hashRouter } = clientConfig;
@@ -127,16 +128,18 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                   <ClientBindAtoms>
                     <ClientNonUIFeatures>
                       <CallEmbedProvider>
-                        <ClientLayout
-                          nav={
-                            <MobileFriendlyClientNav>
-                              <SidebarNav />
-                            </MobileFriendlyClientNav>
-                          }
-                        >
-                          <Outlet />
-                        </ClientLayout>
-                        <CallStatusRenderer />
+                        <RTCProvider>
+                          <ClientLayout
+                            nav={
+                              <MobileFriendlyClientNav>
+                                <SidebarNav />
+                              </MobileFriendlyClientNav>
+                            }
+                          >
+                            <Outlet />
+                          </ClientLayout>
+                          <CallStatusRenderer />
+                        </RTCProvider>
                       </CallEmbedProvider>
                       <SearchModalRenderer />
                       <UserRoomProfileRenderer />

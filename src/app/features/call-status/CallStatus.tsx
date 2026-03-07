@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Spinner } from 'folds';
 import classNames from 'classnames';
+import { Room } from 'matrix-js-sdk';
+import { useAtomValue } from 'jotai';
 import { LiveChip } from './LiveChip';
 import * as css from './styles.css';
 import { CallRoomName } from './CallRoomName';
@@ -10,19 +12,16 @@ import { useCallMembers, useCallSession } from '../../hooks/useCall';
 import { ScreenSize, useScreenSize } from '../../hooks/useScreenSize';
 import { MemberGlance } from './MemberGlance';
 import { StatusDivider } from './components';
-import { CallEmbed } from '../../plugins/call/CallEmbed';
-import { useCallJoined } from '../../hooks/useCallEmbed';
+import { isCallConnectedAtom } from '../../state/rtc';
 
 type CallStatusProps = {
-  callEmbed: CallEmbed;
+  room: Room;
 };
-export function CallStatus({ callEmbed }: CallStatusProps) {
-  const { room } = callEmbed;
-
+export function CallStatus({ room }: CallStatusProps) {
   const callSession = useCallSession(room);
   const callMembers = useCallMembers(room, callSession);
   const screenSize = useScreenSize();
-  const callJoined = useCallJoined(callEmbed);
+  const isCallConnected = useAtomValue(isCallConnectedAtom);
 
   return (
     <Box
@@ -33,7 +32,7 @@ export function CallStatus({ callEmbed }: CallStatusProps) {
       direction={screenSize === ScreenSize.Mobile ? 'Column' : 'Row'}
     >
       <Box grow="Yes" alignItems="Inherit" gap="200">
-        {callJoined && callMembers.length > 0 ? (
+        {isCallConnected && callMembers.length > 0 ? (
           <Box shrink="No" gap="Inherit" alignItems="Inherit">
             <MemberGlance room={room} members={callMembers} />
             <LiveChip count={callMembers.length} room={room} members={callMembers} />
@@ -45,7 +44,7 @@ export function CallStatus({ callEmbed }: CallStatusProps) {
         <CallRoomName room={room} />
       </Box>
       <Box shrink="No" alignItems="Inherit" gap="Inherit">
-        <CallControl callEmbed={callEmbed} />
+        <CallControl />
       </Box>
     </Box>
   );

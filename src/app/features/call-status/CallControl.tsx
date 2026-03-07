@@ -1,7 +1,13 @@
 import { Box, Chip, Icon, IconButton, Icons, Text, Tooltip, TooltipProvider } from 'folds';
 import React, { useState } from 'react';
 import { StatusDivider } from './components';
-import { CallEmbed, useCallControlState } from '../../plugins/call';
+import {
+  useToggleAudio,
+  useToggleVideo,
+  useLeaveCall,
+  useRTCState,
+} from '../../components/RTCProvider';
+import { useCallPreferences } from '../../state/hooks/callPreferences';
 
 type MicrophoneButtonProps = {
   enabled: boolean;
@@ -133,21 +139,32 @@ function ScreenShareButton() {
   );
 }
 
-export function CallControl({ callEmbed }: { callEmbed: CallEmbed }) {
-  const { microphone, video, sound } = useCallControlState(callEmbed.control);
+export function CallControl() {
+  const { isAudioEnabled, isVideoEnabled } = useRTCState();
+  const { sound, toggleSound } = useCallPreferences();
+  const toggleAudio = useToggleAudio();
+  const toggleVideo = useToggleVideo();
+  const leaveCall = useLeaveCall();
 
   return (
     <Box shrink="No" alignItems="Center" gap="300">
       <Box alignItems="Inherit" gap="200">
         <MicrophoneButton
-          enabled={microphone}
-          onToggle={() => callEmbed.control.toggleMicrophone()}
+          enabled={isAudioEnabled}
+          onToggle={async () => {
+            await toggleAudio();
+          }}
         />
-        <SoundButton enabled={sound} onToggle={() => callEmbed.control.toggleSound()} />
+        <SoundButton enabled={sound} onToggle={toggleSound} />
       </Box>
       <StatusDivider />
       <Box alignItems="Inherit" gap="200">
-        <VideoButton enabled={video} onToggle={() => callEmbed.control.toggleVideo()} />
+        <VideoButton
+          enabled={isVideoEnabled}
+          onToggle={async () => {
+            await toggleVideo();
+          }}
+        />
         {false && <ScreenShareButton />}
       </Box>
       <StatusDivider />
@@ -157,7 +174,7 @@ export function CallControl({ callEmbed }: { callEmbed: CallEmbed }) {
         fill="Soft"
         before={<Icon size="50" src={Icons.PhoneDown} filled />}
         outlined
-        onClick={() => callEmbed.hangup()}
+        onClick={() => leaveCall()}
       >
         <Text as="span" size="L400">
           End

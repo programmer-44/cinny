@@ -1,11 +1,17 @@
 import React from 'react';
-import { useCallEmbed } from '../hooks/useCallEmbed';
+import { useAtomValue } from 'jotai';
 import { CallStatus } from '../features/call-status';
+import { activeCallRoomIdAtom } from '../state/rtc';
+import { useMatrixClient } from '../hooks/useMatrixClient';
 
 export function CallStatusRenderer() {
-  const callEmbed = useCallEmbed();
+  const mx = useMatrixClient();
+  const activeCallRoomId = useAtomValue(activeCallRoomIdAtom);
 
-  if (!callEmbed) return null;
+  if (!activeCallRoomId) return null;
 
-  return <CallStatus callEmbed={callEmbed} />;
+  const room = mx.getRoom(activeCallRoomId);
+  if (!room) return null;
+
+  return <CallStatus room={room} />;
 }

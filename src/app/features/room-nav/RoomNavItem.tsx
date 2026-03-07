@@ -54,7 +54,8 @@ import { useRoomPermissions } from '../../hooks/useRoomPermissions';
 import { InviteUserPrompt } from '../../components/invite-user-prompt';
 import { useRoomName } from '../../hooks/useRoomMeta';
 import { useCallMembers, useCallSession } from '../../hooks/useCall';
-import { useCallEmbed, useCallStart } from '../../hooks/useCallEmbed';
+import { useJoinCall } from '../../components/RTCProvider';
+import { activeCallRoomIdAtom } from '../../state/rtc';
 import { callChatAtom } from '../../state/callEmbed';
 import { useCallPreferencesAtom } from '../../state/hooks/callPreferences';
 import { CallControlState } from '../../plugins/call/CallControlState';
@@ -280,19 +281,23 @@ export function RoomNavItem({
   const optionsVisible = hover || !!menuAnchor;
   const callSession = useCallSession(room);
   const callMembers = useCallMembers(room, callSession);
-  const startCall = useCallStart(direct);
-  const callEmbed = useCallEmbed();
+  const joinCall = useJoinCall();
+  const activeCallRoomId = useAtomValue(activeCallRoomIdAtom);
   const callPref = useAtomValue(useCallPreferencesAtom());
 
-  const handleStartCall: MouseEventHandler<HTMLAnchorElement> = (evt) => {
+  const handleStartCall: MouseEventHandler<HTMLAnchorElement> = async (evt) => {
     // Do not join if already in call
-    if (callEmbed) {
+    if (activeCallRoomId) {
       return;
     }
     // Start call in second click
     if (selected) {
       evt.preventDefault();
-      startCall(room, new CallControlState(callPref.microphone, callPref.video, callPref.sound));
+      try {
+        await joinCall(room.roomId);
+      } catch (error) {
+        console.error('Failed to start call:', error);
+      }
     }
   };
 
@@ -372,7 +377,7 @@ export function RoomNavItem({
       </NavLink>
       {optionsVisible && (
         <NavItemOptions>
-          {selected && (callEmbed?.roomId === room.roomId || room.isCallRoom()) && (
+          {selected && (activeCallRoomId === room.roomId || room.isCallRoom()) && (
             <CallChatToggle />
           )}
           <PopOut
